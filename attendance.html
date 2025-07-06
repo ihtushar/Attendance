@@ -99,8 +99,16 @@
             <input type="text" id="summary" required>
         </div>
         <div>
-            <label for="excel">Excel File Link:</label>
-            <input type="url" id="excel" required>
+            <label for="excel1">Excel Link 1:</label>
+            <input type="url" id="excel1">
+        </div>
+        <div>
+            <label for="excel2">Excel Link 2:</label>
+            <input type="url" id="excel2">
+        </div>
+        <div>
+            <label for="excel3">Excel Link 3:</label>
+            <input type="url" id="excel3">
         </div>
         <div>
             <label for="timein">Time In:</label>
@@ -124,7 +132,9 @@
                 <th>Status</th>
                 <th>Notes</th>
                 <th>Work Summary</th>
-                <th>Excel Link</th>
+                <th>Excel Link 1</th>
+                <th>Excel Link 2</th>
+                <th>Excel Link 3</th>
                 <th>Time In</th>
                 <th>Time Out</th>
             </tr>
@@ -222,13 +232,16 @@ function addRow(record) {
     } else if (record.status === 'Absent') {
         row.classList.add('absent');
     }
+    // Build the table row including links to the three Excel files
     const cells = [
         formatDate(new Date(record.date)),
         record.employee,
         record.status,
         record.notes,
         record.summary,
-        `<a href="${record.excel}" target="_blank">Excel File</a>`,
+        (record.excel1 ? `<a href="${record.excel1}" target="_blank">Link 1</a>` : ''),
+        (record.excel2 ? `<a href="${record.excel2}" target="_blank">Link 2</a>` : ''),
+        (record.excel3 ? `<a href="${record.excel3}" target="_blank">Link 3</a>` : ''),
         to12Hour(record.timein),
         to12Hour(record.timeout)
     ];
@@ -317,18 +330,24 @@ attendanceForm.addEventListener('submit', function(event) {
     const status = document.getElementById('status').value;
     const notes = document.getElementById('notes').value;
     const summary = document.getElementById('summary').value;
-    const excel = document.getElementById('excel').value;
+    // Grab all three Excel links from the form
+    const excel1 = document.getElementById('excel1').value;
+    const excel2 = document.getElementById('excel2').value;
+    const excel3 = document.getElementById('excel3').value;
     const timein = document.getElementById('timein').value;
     const timeout = document.getElementById('timeout').value;
 
     const records = JSON.parse(localStorage.getItem(recordsKey)) || [];
+    // Store the entered data including all three Excel links
     const record = {
         date: new Date().toISOString(),
         employee,
         status,
         notes,
         summary,
-        excel,
+        excel1,
+        excel2,
+        excel3,
         timein,
         timeout,
         username: currentUser.username
