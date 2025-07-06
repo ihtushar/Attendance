@@ -50,6 +50,11 @@
         }
         .present { background-color: #d4edda; }
         .absent { background-color: #f8d7da; }
+        /* styling for the admin profile card */
+        .admin-card {
+            border: 2px solid #007bff;
+            background-color: #e6f2ff;
+        }
     </style>
 </head>
 <body>
@@ -106,6 +111,16 @@
 
 <div id="attendanceSection" style="display:none;">
     <h2 id="welcomeMessage"></h2>
+    <div id="adminProfile" class="card admin-card" style="display:none;">
+        <h3>Admin Profile</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>Logged in as <b id="adminUsername"></b></div>
+            <div>
+                <select id="exportUser"></select>
+                <button id="exportBtn" type="button">Download Excel</button>
+            </div>
+        </div>
+    </div>
     <div class="card">
     <form id="attendanceForm">
         <div>
@@ -195,6 +210,10 @@ const tableBody = document.querySelector('#attendanceTable tbody');
 const employeeSelect = document.getElementById('employee');
 const actionsHeader = document.getElementById('actionsHeader');
 const welcomeMessage = document.getElementById('welcomeMessage');
+const adminProfile = document.getElementById('adminProfile');
+const adminUsername = document.getElementById('adminUsername');
+const exportUser = document.getElementById('exportUser');
+const exportBtn = document.getElementById('exportBtn');
 
 // Utility to format date as YYYY-MM-DD HH:MM
 function formatDate(date) {
@@ -224,6 +243,9 @@ function updateView() {
         registerSection.style.display = 'none';
         attendanceSection.style.display = 'block';
         welcomeMessage.innerHTML = `<b>${currentUser.username}</b>`;
+        adminUsername.textContent = currentUser.username;
+        adminProfile.style.display = currentUser.role === 'admin' ? 'block' : 'none';
+        if (currentUser.role === 'admin') populateExportUsers();
         actionsHeader.style.display = currentUser.role === 'admin' ? '' : 'none';
         attendanceForm.style.display = currentUser.role === 'admin' ? 'none' : 'block';
         populateEmployeeOptions();
@@ -255,6 +277,19 @@ function populateEmployeeOptions() {
         employeeSelect.appendChild(opt);
         employeeSelect.disabled = true;
     }
+}
+
+// Populate the export user dropdown for admin
+function populateExportUsers() {
+    exportUser.innerHTML = '';
+    users.forEach(u => {
+        if (u.role === 'employee') {
+            const opt = document.createElement('option');
+            opt.value = u.username;
+            opt.textContent = u.username;
+            exportUser.appendChild(opt);
+        }
+    });
 }
 
 // Add row to table based on a record object
@@ -411,6 +446,40 @@ document.getElementById('attendanceTable').addEventListener('click', function(e)
         localStorage.setItem(recordsKey, JSON.stringify(records));
         loadRecords();
     }
+});
+
+// Export attendance of selected user to CSV
+function downloadCSVForUser(username) {
+    const records = JSON.parse(localStorage.getItem(recordsKey)) || [];
+    const userRecords = records.filter(r => r.employee === username);
+    if (userRecords.length === 0) {
+        alert('No records found for ' + username);
+        return;
+    }
+    const header = ['Date','Employee','Status','Summary','Excel Link 1','Excel Link 2','Excel Link 3','Time In','Time Out'];
+    const rows = userRecords.map(r => [
+        formatDate(new Date(r.date)),
+        r.employee,
+        r.status,
+        r.summary,
+        r.excel1 || '',
+        r.excel2 || '',
+        r.excel3 || '',
+        to12Hour(r.timein),
+        to12Hour(r.timeout)
+    ]);
+    let csv = header.join(',') + '\n' + rows.map(row => row.map(v => '"' + v + '"').join(',')).join('\n');
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${username}-attendance.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+exportBtn.addEventListener('click', () => {
+    const user = exportUser.value;
+    if (user) downloadCSVForUser(user);
 });
 
 updateView();

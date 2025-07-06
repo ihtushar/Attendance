@@ -1,6 +1,6 @@
 # Attendance Tracker
 
-This simple web app tracks employee attendance. It now includes a basic authentication system. Users can register with a username, password and additional profile information which are stored in `localStorage`. A hard coded admin account (`admin` / `adminpass`) is available. After logging in, employees only see and add their own records while the admin can view everything and delete entries.
+This simple web app tracks employee attendance. It now includes a basic authentication system. Users can register with a username, password and additional profile information which are stored in `localStorage`. A hard coded admin account (`admin` / `adminpass`) is available. After logging in, employees only see and add their own records while the admin can view everything and delete entries and export employee attendance to a CSV file from the Admin Profile section.
 
 ## Registration Fields
 
