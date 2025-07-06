@@ -105,6 +105,7 @@
 </div>
 
 <div id="attendanceSection" style="display:none;">
+    <h2 id="welcomeMessage"></h2>
     <div class="card">
     <form id="attendanceForm">
         <div>
@@ -143,9 +144,10 @@
             <label for="timeout">Time Out:</label>
             <input type="time" id="timeout" required>
         </div>
+
         <button type="submit">Add Entry</button>
-        <button type="button" id="logoutBtn" style="float:right;">Logout</button>
     </form>
+    <button type="button" id="logoutBtn" style="float:right;">Logout</button>
     </div>
 
     <div class="card">
@@ -161,7 +163,7 @@
                 <th>Excel Link 3</th>
                 <th>Time In</th>
                 <th>Time Out</th>
-                <th>Actions</th>
+                <th id="actionsHeader">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -191,6 +193,8 @@ const attendanceSection = document.getElementById('attendanceSection');
 const attendanceForm = document.getElementById('attendanceForm');
 const tableBody = document.querySelector('#attendanceTable tbody');
 const employeeSelect = document.getElementById('employee');
+const actionsHeader = document.getElementById('actionsHeader');
+const welcomeMessage = document.getElementById('welcomeMessage');
 
 // Utility to format date as YYYY-MM-DD HH:MM
 function formatDate(date) {
@@ -219,12 +223,16 @@ function updateView() {
         loginSection.style.display = 'none';
         registerSection.style.display = 'none';
         attendanceSection.style.display = 'block';
+        welcomeMessage.innerHTML = `<b>${currentUser.username}</b>`;
+        actionsHeader.style.display = currentUser.role === 'admin' ? '' : 'none';
+        attendanceForm.style.display = currentUser.role === 'admin' ? 'none' : 'block';
         populateEmployeeOptions();
         loadRecords();
     } else {
         loginSection.style.display = 'block';
         registerSection.style.display = 'none';
         attendanceSection.style.display = 'none';
+        welcomeMessage.textContent = '';
     }
 }
 
