@@ -127,6 +127,21 @@
         return `${year}-${month}-${day} ${hours}:${minutes}`;
     }
 
+    // convert a 24-hour time string ("HH:MM") to 12-hour format with AM/PM
+    // "07:00" -> "7:00 AM", "22:15" -> "10:15 PM". If the input is empty,
+    // return a dash so the table does not display "undefined".
+    function to12Hour(time24) {
+        if (!time24) {
+            return '-';
+        }
+        const [hourStr, minute] = time24.split(':');
+        let hour = parseInt(hourStr, 10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12;
+        if (hour === 0) hour = 12; // handle midnight/noon
+        return `${hour}:${minute} ${ampm}`;
+    }
+
     // listen for form submission
     form.addEventListener('submit', function(event) {
         event.preventDefault(); // prevent the page from refreshing
@@ -181,11 +196,13 @@
         row.appendChild(linkCell);
 
         const timeInCell = document.createElement('td');
-        timeInCell.textContent = timein;
+        // convert the time from 24-hour to 12-hour format before displaying
+        timeInCell.textContent = to12Hour(timein);
         row.appendChild(timeInCell);
 
         const timeCell = document.createElement('td');
-        timeCell.textContent = timeout;
+        // apply the same conversion for the Time Out column
+        timeCell.textContent = to12Hour(timeout);
         row.appendChild(timeCell);
 
         // add the row to the table
