@@ -5,8 +5,6 @@
     <title>BluejayPro Attendance Tracker</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f8ff; color: #333; }
-
-        /* Card style container for form */
         .card {
             background: #fff;
             padding: 20px;
@@ -14,21 +12,19 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             max-width: 700px;
             margin: auto;
+            margin-bottom: 20px;
         }
-
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #007bff; color: #fff; }
-
         form div { margin-bottom: 10px; }
         label { display: inline-block; width: 120px; }
-        input[type="text"], input[type="url"], input[type="time"], textarea, select {
+        input[type="text"], input[type="url"], input[type="time"], input[type="password"], textarea, select {
             width: 200px;
             padding: 6px;
             border-radius: 4px;
             border: 1px solid #ccc;
         }
-
         button {
             background-color: #007bff;
             border: none;
@@ -37,28 +33,54 @@
             border-radius: 4px;
             cursor: pointer;
         }
-
         button:hover {
             background-color: #0056b3;
         }
-
-        /* Row highlighting */
         .present { background-color: #d4edda; }
         .absent { background-color: #f8d7da; }
     </style>
 </head>
 <body>
-    <h1>BluejayPro Attendance Tracker</h1>
+<h1>BluejayPro Attendance Tracker</h1>
+
+<div id="loginSection" class="card">
+    <h2>Login</h2>
+    <form id="loginForm">
+        <div>
+            <label for="loginUsername">Username:</label>
+            <input type="text" id="loginUsername" required>
+        </div>
+        <div>
+            <label for="loginPassword">Password:</label>
+            <input type="password" id="loginPassword" required>
+        </div>
+        <button type="submit">Login</button>
+    </form>
+    <p>Don't have an account? <a href="#" id="showRegister">Register</a></p>
+</div>
+
+<div id="registerSection" class="card" style="display:none;">
+    <h2>Register</h2>
+    <form id="registerForm">
+        <div>
+            <label for="registerUsername">Username:</label>
+            <input type="text" id="registerUsername" required>
+        </div>
+        <div>
+            <label for="registerPassword">Password:</label>
+            <input type="password" id="registerPassword" required>
+        </div>
+        <button type="submit">Sign Up</button>
+    </form>
+    <p><a href="#" id="showLogin">Back to Login</a></p>
+</div>
+
+<div id="attendanceSection" style="display:none;">
     <div class="card">
     <form id="attendanceForm">
         <div>
             <label for="employee">Employee:</label>
-            <select id="employee" required>
-                <option value="" disabled selected>Select employee</option>
-                <option value="Alice">Alice</option>
-                <option value="Bob">Bob</option>
-                <option value="Charlie">Charlie</option>
-            </select>
+            <select id="employee" required></select>
         </div>
         <div>
             <label for="status">Status:</label>
@@ -89,6 +111,7 @@
             <input type="time" id="timeout" required>
         </div>
         <button type="submit">Add Entry</button>
+        <button type="button" id="logoutBtn" style="float:right;">Logout</button>
     </form>
     </div>
 
@@ -111,106 +134,213 @@
         </tbody>
     </table>
     </div>
+</div>
 
-    <script>
-    // get references to the form and table body
-    const form = document.getElementById('attendanceForm');
-    const tableBody = document.querySelector('#attendanceTable tbody');
+<script>
+// Keys for localStorage
+const usersKey = 'users';
+const recordsKey = 'attendanceRecords';
 
-    // helper function to format date and time as YYYY-MM-DD HH:MM
-    function formatDate(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day} ${hours}:${minutes}`;
+// Initialize users with hard-coded admin if not present
+let users = JSON.parse(localStorage.getItem(usersKey)) || [];
+if (!users.find(u => u.username === 'admin')) {
+    users.push({username: 'admin', password: 'adminpass', role: 'admin'});
+    localStorage.setItem(usersKey, JSON.stringify(users));
+}
+
+let currentUser = JSON.parse(localStorage.getItem('loggedInUser')) || null;
+
+const loginSection = document.getElementById('loginSection');
+const registerSection = document.getElementById('registerSection');
+const attendanceSection = document.getElementById('attendanceSection');
+const attendanceForm = document.getElementById('attendanceForm');
+const tableBody = document.querySelector('#attendanceTable tbody');
+const employeeSelect = document.getElementById('employee');
+
+// Utility to format date as YYYY-MM-DD HH:MM
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+// Convert 24h time to 12h AM/PM
+function to12Hour(time24) {
+    if (!time24) return '-';
+    const [hourStr, minute] = time24.split(':');
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return `${hour}:${minute} ${ampm}`;
+}
+
+// Show the appropriate section based on login state
+function updateView() {
+    if (currentUser) {
+        loginSection.style.display = 'none';
+        registerSection.style.display = 'none';
+        attendanceSection.style.display = 'block';
+        populateEmployeeOptions();
+        loadRecords();
+    } else {
+        loginSection.style.display = 'block';
+        registerSection.style.display = 'none';
+        attendanceSection.style.display = 'none';
     }
+}
 
-    // convert a 24-hour time string ("HH:MM") to 12-hour format with AM/PM
-    // "07:00" -> "7:00 AM", "22:15" -> "10:15 PM". If the input is empty,
-    // return a dash so the table does not display "undefined".
-    function to12Hour(time24) {
-        if (!time24) {
-            return '-';
-        }
-        const [hourStr, minute] = time24.split(':');
-        let hour = parseInt(hourStr, 10);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        hour = hour % 12;
-        if (hour === 0) hour = 12; // handle midnight/noon
-        return `${hour}:${minute} ${ampm}`;
+// Populate employee select; employees get only their name
+function populateEmployeeOptions() {
+    employeeSelect.innerHTML = '';
+    if (currentUser.role === 'admin') {
+        users.forEach(u => {
+            if (u.role === 'employee') {
+                const opt = document.createElement('option');
+                opt.value = u.username;
+                opt.textContent = u.username;
+                employeeSelect.appendChild(opt);
+            }
+        });
+    } else {
+        const opt = document.createElement('option');
+        opt.value = currentUser.username;
+        opt.textContent = currentUser.username;
+        employeeSelect.appendChild(opt);
+        employeeSelect.disabled = true;
     }
+}
 
-    // listen for form submission
-    form.addEventListener('submit', function(event) {
-        event.preventDefault(); // prevent the page from refreshing
-
-        // collect values from the form
-        const employee = document.getElementById('employee').value;
-        const status = document.getElementById('status').value;
-        const notes = document.getElementById('notes').value;
-        const summary = document.getElementById('summary').value;
-        const excel = document.getElementById('excel').value;
-        const timein = document.getElementById('timein').value;  // new "Time In" field
-        const timeout = document.getElementById('timeout').value;
-
-        // create a new row, applying a style based on the status
-        const row = document.createElement('tr');
-
-        // highlight row color based on attendance status
-        if (status === 'Present') {
-            row.classList.add('present');
-        } else if (status === 'Absent') {
-            row.classList.add('absent');
-        }
-
-        // first cell is the current date and time
-        const dateCell = document.createElement('td');
-        dateCell.textContent = formatDate(new Date());
-        row.appendChild(dateCell);
-
-        // add the rest of the data to the row
-        const employeeCell = document.createElement('td');
-        employeeCell.textContent = employee;
-        row.appendChild(employeeCell);
-
-        const statusCell = document.createElement('td');
-        statusCell.textContent = status;
-        row.appendChild(statusCell);
-
-        const notesCell = document.createElement('td');
-        notesCell.textContent = notes;
-        row.appendChild(notesCell);
-
-        const summaryCell = document.createElement('td');
-        summaryCell.textContent = summary;
-        row.appendChild(summaryCell);
-
-        const linkCell = document.createElement('td');
-        const link = document.createElement('a');
-        link.href = excel;
-        link.textContent = 'Excel File';
-        link.target = '_blank'; // keep file link opening in new tab
-        linkCell.appendChild(link);
-        row.appendChild(linkCell);
-
-        const timeInCell = document.createElement('td');
-        // convert the time from 24-hour to 12-hour format before displaying
-        timeInCell.textContent = to12Hour(timein);
-        row.appendChild(timeInCell);
-
-        const timeCell = document.createElement('td');
-        // apply the same conversion for the Time Out column
-        timeCell.textContent = to12Hour(timeout);
-        row.appendChild(timeCell);
-
-        // add the row to the table
-        tableBody.appendChild(row);
-
-        // clear the form for the next entry
-        form.reset();
+// Add row to table based on a record object
+function addRow(record) {
+    const row = document.createElement('tr');
+    if (record.status === 'Present') {
+        row.classList.add('present');
+    } else if (record.status === 'Absent') {
+        row.classList.add('absent');
+    }
+    const cells = [
+        formatDate(new Date(record.date)),
+        record.employee,
+        record.status,
+        record.notes,
+        record.summary,
+        `<a href="${record.excel}" target="_blank">Excel File</a>`,
+        to12Hour(record.timein),
+        to12Hour(record.timeout)
+    ];
+    cells.forEach(html => {
+        const td = document.createElement('td');
+        td.innerHTML = html;
+        row.appendChild(td);
     });
-    </script>
+    tableBody.appendChild(row);
+}
+
+// Load records from storage and filter based on user
+function loadRecords() {
+    tableBody.innerHTML = '';
+    const records = JSON.parse(localStorage.getItem(recordsKey)) || [];
+    const visible = currentUser.role === 'admin'
+        ? records
+        : records.filter(r => r.username === currentUser.username);
+    visible.forEach(addRow);
+}
+
+// Registration handler
+// Creates a new user object and stores it in localStorage
+registerForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('registerUsername').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    if (users.find(u => u.username === username)) {
+        alert('Username already exists');
+        return;
+    }
+    users.push({username, password, role: 'employee'});
+    localStorage.setItem(usersKey, JSON.stringify(users));
+    alert('Registration successful! Please login.');
+    registerForm.reset();
+    showLogin();
+});
+
+function showLogin() {
+    registerSection.style.display = 'none';
+    loginSection.style.display = 'block';
+}
+function showRegisterForm() {
+    loginSection.style.display = 'none';
+    registerSection.style.display = 'block';
+}
+
+document.getElementById('showRegister').addEventListener('click', function(e) {
+    e.preventDefault();
+    showRegisterForm();
+});
+
+document.getElementById('showLogin').addEventListener('click', function(e) {
+    e.preventDefault();
+    showLogin();
+});
+
+// Login handler
+// Verifies entered credentials against stored users
+loginForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const user = users.find(u => u.username === username && u.password === password);
+    if (!user) {
+        alert('Invalid credentials');
+        return;
+    }
+    currentUser = {username: user.username, role: user.role};
+    localStorage.setItem('loggedInUser', JSON.stringify(currentUser));
+    updateView();
+    loginForm.reset();
+});
+
+// Logout handler
+document.getElementById('logoutBtn').addEventListener('click', function() {
+    localStorage.removeItem('loggedInUser');
+    currentUser = null;
+    updateView();
+});
+
+// Handle attendance form submission
+attendanceForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    const employee = employeeSelect.value;
+    const status = document.getElementById('status').value;
+    const notes = document.getElementById('notes').value;
+    const summary = document.getElementById('summary').value;
+    const excel = document.getElementById('excel').value;
+    const timein = document.getElementById('timein').value;
+    const timeout = document.getElementById('timeout').value;
+
+    const records = JSON.parse(localStorage.getItem(recordsKey)) || [];
+    const record = {
+        date: new Date().toISOString(),
+        employee,
+        status,
+        notes,
+        summary,
+        excel,
+        timein,
+        timeout,
+        username: currentUser.username
+    };
+    records.push(record);
+    localStorage.setItem(recordsKey, JSON.stringify(records));
+
+    addRow(record);
+    attendanceForm.reset();
+});
+
+updateView();
+</script>
 </body>
 </html>
