@@ -10,13 +10,25 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            max-width: 700px;
+            max-width: 1000px;
             margin: auto;
             margin-bottom: 20px;
         }
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #007bff; color: #fff; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .deleteBtn {
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .deleteBtn:hover {
+            background-color: #c82333;
+        }
         form div { margin-bottom: 10px; }
         label { display: inline-block; width: 120px; }
         input[type="text"], input[type="url"], input[type="time"], input[type="password"], textarea, select {
@@ -91,10 +103,6 @@
             </select>
         </div>
         <div>
-            <label for="notes">Notes:</label>
-            <textarea id="notes" rows="2" cols="30"></textarea>
-        </div>
-        <div>
             <label for="summary">Work Summary:</label>
             <input type="text" id="summary" required>
         </div>
@@ -130,13 +138,13 @@
                 <th>Date</th>
                 <th>Employee</th>
                 <th>Status</th>
-                <th>Notes</th>
                 <th>Work Summary</th>
                 <th>Excel Link 1</th>
                 <th>Excel Link 2</th>
                 <th>Excel Link 3</th>
                 <th>Time In</th>
                 <th>Time Out</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -225,8 +233,9 @@ function populateEmployeeOptions() {
 }
 
 // Add row to table based on a record object
-function addRow(record) {
+function addRow(record, index) {
     const row = document.createElement('tr');
+    row.dataset.index = index;
     if (record.status === 'Present') {
         row.classList.add('present');
     } else if (record.status === 'Absent') {
@@ -237,7 +246,6 @@ function addRow(record) {
         formatDate(new Date(record.date)),
         record.employee,
         record.status,
-        record.notes,
         record.summary,
         (record.excel1 ? `<a href="${record.excel1}" target="_blank">Link 1</a>` : ''),
         (record.excel2 ? `<a href="${record.excel2}" target="_blank">Link 2</a>` : ''),
@@ -245,6 +253,9 @@ function addRow(record) {
         to12Hour(record.timein),
         to12Hour(record.timeout)
     ];
+    if (currentUser.role === 'admin') {
+        cells.push(`<button class="deleteBtn" data-index="${index}">Delete</button>`);
+    }
     cells.forEach(html => {
         const td = document.createElement('td');
         td.innerHTML = html;
@@ -260,7 +271,7 @@ function loadRecords() {
     const visible = currentUser.role === 'admin'
         ? records
         : records.filter(r => r.username === currentUser.username);
-    visible.forEach(addRow);
+    visible.forEach((rec, idx) => addRow(rec, idx));
 }
 
 // Registration handler
@@ -328,7 +339,6 @@ attendanceForm.addEventListener('submit', function(event) {
     event.preventDefault();
     const employee = employeeSelect.value;
     const status = document.getElementById('status').value;
-    const notes = document.getElementById('notes').value;
     const summary = document.getElementById('summary').value;
     // Grab all three Excel links from the form
     const excel1 = document.getElementById('excel1').value;
@@ -343,7 +353,6 @@ attendanceForm.addEventListener('submit', function(event) {
         date: new Date().toISOString(),
         employee,
         status,
-        notes,
         summary,
         excel1,
         excel2,
@@ -355,8 +364,18 @@ attendanceForm.addEventListener('submit', function(event) {
     records.push(record);
     localStorage.setItem(recordsKey, JSON.stringify(records));
 
-    addRow(record);
+    addRow(record, records.length - 1);
     attendanceForm.reset();
+});
+
+document.getElementById('attendanceTable').addEventListener('click', function(e) {
+    if (e.target.classList.contains('deleteBtn')) {
+        const index = parseInt(e.target.dataset.index, 10);
+        const records = JSON.parse(localStorage.getItem(recordsKey)) || [];
+        records.splice(index, 1);
+        localStorage.setItem(recordsKey, JSON.stringify(records));
+        loadRecords();
+    }
 });
 
 updateView();
