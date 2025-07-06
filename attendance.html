@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BluejayPro Attendance Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #000; color: #fff; }
+        form div { margin-bottom: 10px; }
+        label { display: inline-block; width: 120px; }
+        input[type="text"], input[type="url"], input[type="time"], textarea, select { width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>BluejayPro Attendance Tracker</h1>
+    <form id="attendanceForm">
+        <div>
+            <label for="employee">Employee:</label>
+            <select id="employee" required>
+                <option value="" disabled selected>Select employee</option>
+                <option value="Alice">Alice</option>
+                <option value="Bob">Bob</option>
+                <option value="Charlie">Charlie</option>
+            </select>
+        </div>
+        <div>
+            <label for="status">Status:</label>
+            <select id="status" required>
+                <option value="" disabled selected>Select status</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+            </select>
+        </div>
+        <div>
+            <label for="notes">Notes:</label>
+            <textarea id="notes" rows="2" cols="30"></textarea>
+        </div>
+        <div>
+            <label for="summary">Work Summary:</label>
+            <input type="text" id="summary" required>
+        </div>
+        <div>
+            <label for="excel">Excel File Link:</label>
+            <input type="url" id="excel" required>
+        </div>
+        <div>
+            <label for="timeout">Time Out:</label>
+            <input type="time" id="timeout" required>
+        </div>
+        <button type="submit">Add Entry</button>
+    </form>
+
+    <table id="attendanceTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Employee</th>
+                <th>Status</th>
+                <th>Notes</th>
+                <th>Work Summary</th>
+                <th>Excel Link</th>
+                <th>Time Out</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- entries will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+    // get references to the form and table body
+    const form = document.getElementById('attendanceForm');
+    const tableBody = document.querySelector('#attendanceTable tbody');
+
+    // helper function to format date and time as YYYY-MM-DD HH:MM
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
+
+    // listen for form submission
+    form.addEventListener('submit', function(event) {
+        event.preventDefault(); // prevent the page from refreshing
+
+        // collect values from the form
+        const employee = document.getElementById('employee').value;
+        const status = document.getElementById('status').value;
+        const notes = document.getElementById('notes').value;
+        const summary = document.getElementById('summary').value;
+        const excel = document.getElementById('excel').value;
+        const timeout = document.getElementById('timeout').value;
+
+        // create a new row and cells
+        const row = document.createElement('tr');
+
+        // first cell is the current date and time
+        const dateCell = document.createElement('td');
+        dateCell.textContent = formatDate(new Date());
+        row.appendChild(dateCell);
+
+        // add the rest of the data to the row
+        const employeeCell = document.createElement('td');
+        employeeCell.textContent = employee;
+        row.appendChild(employeeCell);
+
+        const statusCell = document.createElement('td');
+        statusCell.textContent = status;
+        row.appendChild(statusCell);
+
+        const notesCell = document.createElement('td');
+        notesCell.textContent = notes;
+        row.appendChild(notesCell);
+
+        const summaryCell = document.createElement('td');
+        summaryCell.textContent = summary;
+        row.appendChild(summaryCell);
+
+        const linkCell = document.createElement('td');
+        const link = document.createElement('a');
+        link.href = excel;
+        link.textContent = 'Excel File';
+        link.target = '_blank';
+        linkCell.appendChild(link);
+        row.appendChild(linkCell);
+
+        const timeCell = document.createElement('td');
+        timeCell.textContent = timeout;
+        row.appendChild(timeCell);
+
+        // add the row to the table
+        tableBody.appendChild(row);
+
+        // clear the form for the next entry
+        form.reset();
+    });
+    </script>
+</body>
+</html>
