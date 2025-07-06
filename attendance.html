@@ -82,6 +82,23 @@
             <label for="registerPassword">Password:</label>
             <input type="password" id="registerPassword" required>
         </div>
+        <div>
+            <label for="registerAddress">Address:</label>
+            <input type="text" id="registerAddress" required>
+        </div>
+        <div>
+            <label for="registerProficiency">English Proficiency:</label>
+            <select id="registerProficiency" required>
+                <option value="" disabled selected>Select level</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+            </select>
+        </div>
+        <div>
+            <label for="registerHobby">Hobby:</label>
+            <input type="text" id="registerHobby" required>
+        </div>
         <button type="submit">Sign Up</button>
     </form>
     <p><a href="#" id="showLogin">Back to Login</a></p>
@@ -280,11 +297,21 @@ registerForm.addEventListener('submit', function(e) {
     e.preventDefault();
     const username = document.getElementById('registerUsername').value.trim();
     const password = document.getElementById('registerPassword').value;
+    const address = document.getElementById('registerAddress').value.trim();
+    const proficiency = document.getElementById('registerProficiency').value;
+    const hobby = document.getElementById('registerHobby').value.trim();
     if (users.find(u => u.username === username)) {
         alert('Username already exists');
         return;
     }
-    users.push({username, password, role: 'employee'});
+    users.push({
+        username,
+        password,
+        address,
+        proficiency,
+        hobby,
+        role: 'employee'
+    });
     localStorage.setItem(usersKey, JSON.stringify(users));
     alert('Registration successful! Please login.');
     registerForm.reset();
