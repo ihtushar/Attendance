@@ -4,17 +4,52 @@
     <meta charset="UTF-8">
     <title>BluejayPro Attendance Tracker</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f8ff; color: #333; }
+
+        /* Card style container for form */
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-width: 700px;
+            margin: auto;
+        }
+
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #000; color: #fff; }
+        th { background-color: #007bff; color: #fff; }
+
         form div { margin-bottom: 10px; }
         label { display: inline-block; width: 120px; }
-        input[type="text"], input[type="url"], input[type="time"], textarea, select { width: 200px; }
+        input[type="text"], input[type="url"], input[type="time"], textarea, select {
+            width: 200px;
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #007bff;
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Row highlighting */
+        .present { background-color: #d4edda; }
+        .absent { background-color: #f8d7da; }
     </style>
 </head>
 <body>
     <h1>BluejayPro Attendance Tracker</h1>
+    <div class="card">
     <form id="attendanceForm">
         <div>
             <label for="employee">Employee:</label>
@@ -46,12 +81,18 @@
             <input type="url" id="excel" required>
         </div>
         <div>
+            <label for="timein">Time In:</label>
+            <input type="time" id="timein" required>
+        </div>
+        <div>
             <label for="timeout">Time Out:</label>
             <input type="time" id="timeout" required>
         </div>
         <button type="submit">Add Entry</button>
     </form>
+    </div>
 
+    <div class="card">
     <table id="attendanceTable">
         <thead>
             <tr>
@@ -61,6 +102,7 @@
                 <th>Notes</th>
                 <th>Work Summary</th>
                 <th>Excel Link</th>
+                <th>Time In</th>
                 <th>Time Out</th>
             </tr>
         </thead>
@@ -68,6 +110,7 @@
             <!-- entries will be added here -->
         </tbody>
     </table>
+    </div>
 
     <script>
     // get references to the form and table body
@@ -94,10 +137,18 @@
         const notes = document.getElementById('notes').value;
         const summary = document.getElementById('summary').value;
         const excel = document.getElementById('excel').value;
+        const timein = document.getElementById('timein').value;  // new "Time In" field
         const timeout = document.getElementById('timeout').value;
 
-        // create a new row and cells
+        // create a new row, applying a style based on the status
         const row = document.createElement('tr');
+
+        // highlight row color based on attendance status
+        if (status === 'Present') {
+            row.classList.add('present');
+        } else if (status === 'Absent') {
+            row.classList.add('absent');
+        }
 
         // first cell is the current date and time
         const dateCell = document.createElement('td');
@@ -125,9 +176,13 @@
         const link = document.createElement('a');
         link.href = excel;
         link.textContent = 'Excel File';
-        link.target = '_blank';
+        link.target = '_blank'; // keep file link opening in new tab
         linkCell.appendChild(link);
         row.appendChild(linkCell);
+
+        const timeInCell = document.createElement('td');
+        timeInCell.textContent = timein;
+        row.appendChild(timeInCell);
 
         const timeCell = document.createElement('td');
         timeCell.textContent = timeout;
