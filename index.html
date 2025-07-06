@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BluejayPro Attendance</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <h1>BluejayPro Attendance</h1>
+    <form id="attendance-form">
+        <label for="employee">Employee:</label>
+        <select id="employee" name="employee">
+            <option value="Alice">Alice</option>
+            <option value="Bob">Bob</option>
+            <option value="Charlie">Charlie</option>
+            <option value="Dana">Dana</option>
+        </select>
+        <br/>
+        <label for="status">Status:</label>
+        <select id="status" name="status">
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+            <option value="Late">Late</option>
+            <option value="Leave">Leave</option>
+        </select>
+        <br/>
+        <label for="notes">Notes:</label>
+        <input type="text" id="notes" name="notes" />
+        <br/>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="success" class="success">Attendance submitted successfully!</div>
+
+    <script>
+      document.getElementById('attendance-form').addEventListener('submit', function(event) {
+          event.preventDefault();
+          document.getElementById('success').style.display = 'block';
+      });
+    </script>
+</body>
+</html>
